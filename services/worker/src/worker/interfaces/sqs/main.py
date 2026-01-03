@@ -19,13 +19,17 @@ def _required_env(name: str) -> str:
 async def run_forever() -> None:
     region = os.getenv("AWS_REGION", "us-east-1")
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")  # LocalStack: http://localstack:4566
-    queue_url = _required_env("SQS_QUEUE_URL")
+    queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
 
     idempotency = InMemoryIdempotencyStore()
     processor = MessageProcessor(idempotency)
 
     session = aioboto3.Session()
-    async with session.client("sqs", region_name=region, endpoint_url=endpoint_url) as sqs:
+    # aioboto3 requires client/resource creators to be used as async context managers.
+    # Pylance may flag this due to incomplete type stubs.
+    async with session.client(  # pyright: ignore[reportGeneralTypeIssues]
+        "sqs", region_name=region, endpoint_url=endpoint_url
+    ) as sqs:
         while True:
             resp = await sqs.receive_message(
                 QueueUrl=queue_url,

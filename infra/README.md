@@ -6,4 +6,9 @@ Environments:
 - `infra/envs/prod` placeholder
 
 Modules:
-- `infra/modules/sqs-queue`
+- `infra/modules/alb`
+- `infra/modules/cloudfront`
+- `infra/modules/ecs`
+- `infra/modules/rds`
+- `infra/modules/redis`
+- `infra/modules/sqs`

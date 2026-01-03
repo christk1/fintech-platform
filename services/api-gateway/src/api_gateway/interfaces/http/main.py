@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, AsyncContextManager, cast
+from typing import Any
 
 import aioboto3
 from fastapi import FastAPI, HTTPException
@@ -35,14 +35,14 @@ def create_app() -> FastAPI:
 
         region = os.getenv("AWS_REGION", "us-east-1")
         endpoint_url = os.getenv("AWS_ENDPOINT_URL")  # LocalStack: http://localstack:4566
-        queue_url = _required_env("SQS_QUEUE_URL")
+        queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
 
         session = aioboto3.Session()
-        sqs_cm = cast(
-            AsyncContextManager[Any],
-            session.client("sqs", region_name=region, endpoint_url=endpoint_url),
-        )
-        async with sqs_cm as sqs:
+        # aioboto3 requires client/resource creators to be used as async context managers.
+        # Pylance may flag this due to incomplete type stubs.
+        async with session.client(  # pyright: ignore[reportGeneralTypeIssues]
+            "sqs", region_name=region, endpoint_url=endpoint_url
+        ) as sqs:
             try:
                 await sqs.send_message(
                     QueueUrl=queue_url,
