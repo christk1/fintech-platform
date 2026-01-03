@@ -1,0 +1,18 @@
+[project]
+name = "balance-service"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+  "grpcio>=1.70.0",
+  "grpcio-tools>=1.70.0",
+  "protobuf>=5.28.0",
+]
+
+[project.scripts]
+balance-service = "balance_service.interfaces.grpc.server:main"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

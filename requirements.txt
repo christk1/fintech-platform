@@ -1,0 +1,4 @@
+# Local developer convenience: install each service (and its pinned deps) into a single venv.
+-e services/api-gateway
+-e services/balance-service
+-e services/worker

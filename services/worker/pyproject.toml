@@ -1,0 +1,17 @@
+[project]
+name = "worker"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+  "aioboto3>=13.0.0",
+  "pydantic>=2.8.0",
+]
+
+[project.scripts]
+worker = "worker.interfaces.sqs.main:main"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
