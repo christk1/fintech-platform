@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, AsyncContextManager, cast
 
 import aioboto3
 from fastapi import FastAPI, HTTPException
@@ -38,7 +38,11 @@ def create_app() -> FastAPI:
         queue_url = _required_env("SQS_QUEUE_URL")
 
         session = aioboto3.Session()
-        async with session.client("sqs", region_name=region, endpoint_url=endpoint_url) as sqs:
+        sqs_cm = cast(
+            AsyncContextManager[Any],
+            session.client("sqs", region_name=region, endpoint_url=endpoint_url),
+        )
+        async with sqs_cm as sqs:
             try:
                 await sqs.send_message(
                     QueueUrl=queue_url,

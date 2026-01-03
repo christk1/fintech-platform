@@ -13,11 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app/src
 
 # Generate gRPC stubs during image build
-RUN python -m grpc_tools.protoc \
-  -I /app/src/balance_service/interfaces/grpc/proto \
-  --python_out=/app/src/balance_service/interfaces/grpc \
-  --grpc_python_out=/app/src/balance_service/interfaces/grpc \
-  /app/src/balance_service/interfaces/grpc/proto/balance.proto
+RUN python -m balance_service.interfaces.grpc.gen_stubs
 
 EXPOSE 50051
 
