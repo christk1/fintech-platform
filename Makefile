@@ -1,4 +1,4 @@
-.PHONY: infra-local infra-local-clean sync-env up down reset
+.PHONY: infra-local infra-local-clean sync-env up down reset migrate
 
 infra-local:
 	cd infra/envs/local && terraform init && terraform apply -auto-approve
@@ -24,3 +24,9 @@ down:
 reset:
 	cd infra/envs/local && terraform destroy -auto-approve || true
 	docker compose down -v --remove-orphans
+
+migrate:
+	@# Runs DB migrations (owned by api-gateway) using DATABASE_URL from .env
+	@set -a; [ -f .env ] && . ./.env; set +a; \
+	DATABASE_URL="$$(printf '%s' "$$DATABASE_URL" | sed 's/host.docker.internal/localhost/g')"; \
+	cd services/api-gateway && DATABASE_URL="$$DATABASE_URL" ../../.venv/bin/python -m alembic -c alembic.ini upgrade head

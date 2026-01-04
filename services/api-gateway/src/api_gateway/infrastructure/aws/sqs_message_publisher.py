@@ -4,7 +4,8 @@ import json
 import os
 from typing import Any
 
-import aioboto3
+from anyio import to_thread
+import boto3
 
 from api_gateway.application.ports.message_publisher import MessagePublisher
 
@@ -17,18 +18,28 @@ def _required_env(name: str) -> str:
 
 
 class SqsMessagePublisher(MessagePublisher):
-    async def publish(self, *, message_type: str, payload: dict[str, Any]) -> None:
-        region = os.getenv("AWS_REGION", "us-east-1")
-        endpoint_url = os.getenv("AWS_ENDPOINT_URL")
-        queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
+    def __init__(self) -> None:
+        self._region = os.getenv("AWS_REGION", "us-east-1")
+        self._endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+        self._queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
 
-        session = aioboto3.Session()
-        async with session.client(  # pyright: ignore[reportGeneralTypeIssues]
-            "sqs", region_name=region, endpoint_url=endpoint_url
-        ) as sqs:
-            await sqs.send_message(
-                QueueUrl=queue_url,
-                MessageBody=json.dumps(
-                    {"type": message_type, "payload": payload}, separators=(",", ":")
-                ),
+        session = boto3.Session()
+        self._sqs = session.client(
+            "sqs",
+            region_name=self._region,
+            endpoint_url=self._endpoint_url,
+        )
+
+    async def publish(self, *, message_type: str, payload: dict[str, Any]) -> None:
+        body = json.dumps(
+            {"type": message_type, "payload": payload},
+            separators=(",", ":"),
+        )
+
+        def _send() -> None:
+            self._sqs.send_message(
+                QueueUrl=self._queue_url,
+                MessageBody=body,
             )
+
+        await to_thread.run_sync(_send)

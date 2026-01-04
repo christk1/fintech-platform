@@ -8,7 +8,10 @@ import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
 
 from worker.application.processor import MessageProcessor
-from worker.infrastructure.idempotency.in_memory import InMemoryIdempotencyStore
+from worker.infrastructure.idempotency.postgres import (
+    PostgresIdempotencyStore,
+    idempotency_table_name_from_env,
+)
 
 
 def _required_env(name: str) -> str:
@@ -18,12 +21,29 @@ def _required_env(name: str) -> str:
     return value
 
 
+def _build_idempotency_store() -> PostgresIdempotencyStore:
+    database_url = _required_env("DATABASE_URL")
+    store = PostgresIdempotencyStore(
+        database_url=database_url,
+        table_name=idempotency_table_name_from_env(),
+    )
+    store.assert_schema_ready()
+    return store
+
+
 def run_forever() -> None:
     region = os.getenv("AWS_REGION", "us-east-1")
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")  # LocalStack: http://localstack:4566
     queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
 
-    idempotency = InMemoryIdempotencyStore()
+    while True:
+        try:
+            idempotency = _build_idempotency_store()
+            break
+        except Exception as exc:  # noqa: BLE001
+            print(f"Database is not reachable yet ({exc}). Retrying...", file=sys.stderr)
+            time.sleep(2)
+
     processor = MessageProcessor(idempotency)
 
     session = boto3.Session()

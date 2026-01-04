@@ -9,15 +9,16 @@ class InMemoryIdempotencyStore(IdempotencyStore):
     def __init__(self) -> None:
         self._expiry_by_key: dict[str, float] = {}
 
-    def seen(self, key: str) -> bool:
+    def claim(self, key: str, *, ttl_seconds: int) -> bool:
         now = time.time()
         expiry = self._expiry_by_key.get(key)
-        if expiry is None:
+        if expiry is not None and expiry > now:
             return False
-        if expiry <= now:
-            self._expiry_by_key.pop(key, None)
-            return False
+        self._expiry_by_key[key] = now + ttl_seconds
         return True
 
-    def mark_seen(self, key: str, *, ttl_seconds: int) -> None:
+    def complete(self, key: str, *, ttl_seconds: int) -> None:
         self._expiry_by_key[key] = time.time() + ttl_seconds
+
+    def release(self, key: str) -> None:
+        self._expiry_by_key.pop(key, None)

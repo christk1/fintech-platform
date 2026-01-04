@@ -19,10 +19,15 @@ class MessageProcessor:
         # This is intentionally skeletal: boundary + idempotency pattern only.
         # Webhook handling / background jobs should be orchestrated from here.
 
-        if self._idempotency.seen(message_id):
+        ttl_seconds = 24 * 60 * 60
+        if not self._idempotency.claim(message_id, ttl_seconds=ttl_seconds):
             return ProcessResult(should_delete=True)
 
-        _ = json.loads(body)  # validate/route by message type in real implementation
-
-        self._idempotency.mark_seen(message_id, ttl_seconds=24 * 60 * 60)
-        return ProcessResult(should_delete=True)
+        try:
+            _ = json.loads(body)  # validate/route by message type in real implementation
+            self._idempotency.complete(message_id, ttl_seconds=ttl_seconds)
+            return ProcessResult(should_delete=True)
+        except Exception:
+            # Allow retries: don't permanently block the key on failed processing.
+            self._idempotency.release(message_id)
+            raise
