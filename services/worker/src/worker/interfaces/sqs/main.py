@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sys
 
 import aioboto3
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from worker.application.processor import MessageProcessor
 from worker.infrastructure.idempotency.in_memory import InMemoryIdempotencyStore
@@ -31,12 +33,30 @@ async def run_forever() -> None:
         "sqs", region_name=region, endpoint_url=endpoint_url
     ) as sqs:
         while True:
-            resp = await sqs.receive_message(
-                QueueUrl=queue_url,
-                MaxNumberOfMessages=10,
-                WaitTimeSeconds=20,
-                VisibilityTimeout=30,
-            )
+            try:
+                resp = await sqs.receive_message(
+                    QueueUrl=queue_url,
+                    MaxNumberOfMessages=10,
+                    WaitTimeSeconds=20,
+                    VisibilityTimeout=30,
+                )
+            except EndpointConnectionError:
+                print(
+                    "LocalStack is not reachable yet. Ensure `localstack start` is running. Retrying...",
+                    file=sys.stderr,
+                )
+                await asyncio.sleep(2)
+                continue
+            except ClientError as exc:
+                code = exc.response.get("Error", {}).get("Code")
+                if code in {"AWS.SimpleQueueService.NonExistentQueue", "QueueDoesNotExist"}:
+                    print(
+                        "SQS queue does not exist yet. Run `make infra-local` to provision it. Retrying...",
+                        file=sys.stderr,
+                    )
+                    await asyncio.sleep(2)
+                    continue
+                raise
 
             messages = resp.get("Messages", [])
             if not messages:

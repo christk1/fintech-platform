@@ -20,6 +20,7 @@ variable "localstack_endpoint" {
 }
 
 variable "events_queue_name" {
-  type    = string
-  default = "fintech-local-events"
+  type        = string
+  description = "SQS queue name used by the local environment"
+  default     = "fintech-local-events"
 }

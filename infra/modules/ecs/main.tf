@@ -1,2 +1,3 @@
-// Placeholder module.
-// Add aws_ecs_cluster, aws_ecs_task_definition, aws_ecs_service, IAM, and logs here.
+resource "aws_ecs_cluster" "this" {
+	name = var.cluster_name
+}

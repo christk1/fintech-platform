@@ -16,4 +16,4 @@ ENV PYTHONPATH=/app/src
 
 EXPOSE 8000
 
-CMD ["fastapi", "run", "--host", "0.0.0.0", "--port", "8000", "api_gateway.interfaces.http.main:app"]
+CMD ["fastapi", "run", "--host", "0.0.0.0", "--port", "8000", "--entrypoint", "api_gateway.interfaces.http.main:app"]
