@@ -1,59 +1,24 @@
 from __future__ import annotations
 
-import json
-import os
-from typing import Any
+from fastapi import FastAPI
 
-import aioboto3
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-
-
-def _required_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise RuntimeError(f"Missing required env var: {name}")
-    return value
-
-
-class PublishRequest(BaseModel):
-    message_type: str = Field(min_length=1)
-    payload: dict[str, Any]
+from api_gateway.application.use_cases.publish_message import PublishMessage
+from api_gateway.infrastructure.aws.sqs_message_publisher import SqsMessagePublisher
+from api_gateway.interfaces.http.routers import v1, v2
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="api-gateway")
 
+    # Dependency wiring (outer layers depend inward).
+    app.state.publish_message_use_case = PublishMessage(publisher=SqsMessagePublisher())
+
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.post("/v1/messages")
-    async def publish_message(body: PublishRequest) -> dict[str, str]:
-        # NOTE: Auth/orchestration/validation live here; business logic is intentionally absent.
-        # This endpoint only publishes to SQS. It does NOT create any infrastructure.
-
-        region = os.getenv("AWS_REGION", "us-east-1")
-        endpoint_url = os.getenv("AWS_ENDPOINT_URL")  # LocalStack: http://localstack:4566
-        queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
-
-        session = aioboto3.Session()
-        # aioboto3 requires client/resource creators to be used as async context managers.
-        # Pylance may flag this due to incomplete type stubs.
-        async with session.client(  # pyright: ignore[reportGeneralTypeIssues]
-            "sqs", region_name=region, endpoint_url=endpoint_url
-        ) as sqs:
-            try:
-                await sqs.send_message(
-                    QueueUrl=queue_url,
-                    MessageBody=json.dumps(
-                        {"type": body.message_type, "payload": body.payload}, separators=(",", ":")
-                    ),
-                )
-            except Exception as exc:  # noqa: BLE001
-                raise HTTPException(status_code=502, detail="Failed to publish message") from exc
-
-        return {"status": "queued"}
+    app.include_router(v1.router, prefix="/v1", tags=["v1"])
+    app.include_router(v2.router, prefix="/v2", tags=["v2"])
 
     return app
 
