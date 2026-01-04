@@ -9,7 +9,7 @@ class InMemoryIdempotencyStore(IdempotencyStore):
     def __init__(self) -> None:
         self._expiry_by_key: dict[str, float] = {}
 
-    async def seen(self, key: str) -> bool:
+    def seen(self, key: str) -> bool:
         now = time.time()
         expiry = self._expiry_by_key.get(key)
         if expiry is None:
@@ -19,5 +19,5 @@ class InMemoryIdempotencyStore(IdempotencyStore):
             return False
         return True
 
-    async def mark_seen(self, key: str, *, ttl_seconds: int) -> None:
+    def mark_seen(self, key: str, *, ttl_seconds: int) -> None:
         self._expiry_by_key[key] = time.time() + ttl_seconds
