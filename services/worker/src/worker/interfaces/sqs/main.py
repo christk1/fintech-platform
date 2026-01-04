@@ -67,10 +67,13 @@ async def run_forever() -> None:
                 receipt = msg.get("ReceiptHandle") or ""
                 body = msg.get("Body") or "{}"
 
+                print(f"Received MessageId={message_id}")
+
                 try:
                     result = await processor.process(message_id=message_id, body=body)
                     if result.should_delete:
                         await sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt)
+                        print(f"Deleted MessageId={message_id}")
                 except Exception:  # noqa: BLE001
                     # In production: emit structured logs/metrics and rely on visibility timeout + DLQ.
                     continue
