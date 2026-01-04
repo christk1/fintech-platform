@@ -12,3 +12,7 @@ class PublishRequest(BaseModel):
 
 class PublishResponse(BaseModel):
     status: str
+
+
+class BalancePingResponse(BaseModel):
+    status: str

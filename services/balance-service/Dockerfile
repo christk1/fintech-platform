@@ -1,20 +1,36 @@
-FROM python:3.13-slim
+FROM golang:1.25-alpine AS build
+
+WORKDIR /src
+
+ENV PATH=/usr/local/go/bin:/go/bin:$PATH
+
+RUN apk add --no-cache protobuf git
+
+COPY go.mod ./
+RUN go mod download
+
+COPY . .
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
+  && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+RUN protoc \
+  --go_out=. --go_opt=paths=source_relative \
+  --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+  proto/balance.proto
+
+RUN CGO_ENABLED=0 go build -o /out/balance-service ./cmd/server
+
+
+FROM alpine:3.23
 
 WORKDIR /app
 
-COPY pyproject.toml /app/pyproject.toml
-RUN pip install --no-cache-dir -U pip \
-  && pip install --no-cache-dir .
+COPY --from=build /out/balance-service /app/balance-service
 
-COPY src/ /app/src/
-
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONPATH=/app/src
-
-# Generate gRPC stubs during image build
-RUN python -m balance_service.interfaces.grpc.gen_stubs
+ENV HOST=0.0.0.0
+ENV PORT=50051
 
 EXPOSE 50051
 
-CMD ["python", "-m", "balance_service.interfaces.grpc.server"]
+CMD ["/app/balance-service"]

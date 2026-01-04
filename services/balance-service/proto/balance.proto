@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package balance.v1;
 
+option go_package = "github.com/christk1/fintech-platform/services/balance-service/proto;balancev1";
+
 service BalanceService {
   rpc Ping(PingRequest) returns (PingResponse);
 }
 
-message PingRequest {
-  string request_id = 1;
-}
+message PingRequest {}
 
 message PingResponse {
   string status = 1;
