@@ -33,6 +33,88 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type tokenBucket struct {
+	tokens chan struct{}
+}
+
+func newTokenBucket(rps int, burst int) *tokenBucket {
+	if rps <= 0 {
+		return nil
+	}
+	if burst <= 0 {
+		burst = 1
+	}
+
+	tb := &tokenBucket{tokens: make(chan struct{}, burst)}
+	for range burst {
+		tb.tokens <- struct{}{}
+	}
+
+	interval := time.Second / time.Duration(rps)
+	if interval <= 0 {
+		interval = time.Nanosecond
+	}
+
+	ticker := time.NewTicker(interval)
+	go func() {
+		defer ticker.Stop()
+		for range ticker.C {
+			select {
+			case tb.tokens <- struct{}{}:
+			default:
+				// bucket full
+			}
+		}
+	}()
+
+	return tb
+}
+
+func (tb *tokenBucket) Take(ctx context.Context) error {
+	if tb == nil {
+		return nil
+	}
+	select {
+	case <-tb.tokens:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func unaryLimiterInterceptor(maxInflight int, rps int, burst int) grpc.UnaryServerInterceptor {
+	var sem chan struct{}
+	if maxInflight > 0 {
+		sem = make(chan struct{}, maxInflight)
+	}
+	limiter := newTokenBucket(rps, burst)
+
+	return func(
+		ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (any, error) {
+		if err := limiter.Take(ctx); err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				return nil, status.Error(codes.DeadlineExceeded, "request deadline exceeded")
+			}
+			return nil, status.Error(codes.Canceled, "request canceled")
+		}
+
+		if sem != nil {
+			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			default:
+				return nil, status.Error(codes.ResourceExhausted, "too many concurrent requests")
+			}
+		}
+
+		return handler(ctx, req)
+	}
+}
+
 type balanceServer struct {
 	balancev1.UnimplementedBalanceServiceServer
 }
@@ -173,7 +255,19 @@ func main() {
 		log.Fatalf("listen %s: %v", addr, err)
 	}
 
-	srv := grpc.NewServer()
+	maxInflight := getenvInt("MAX_INFLIGHT_REQUESTS", 64)
+	maxRps := getenvInt("MAX_RPS", 0) // 0 disables RPS limiting
+	maxRpsBurst := getenvInt("MAX_RPS_BURST", 0)
+	if maxRpsBurst <= 0 {
+		maxRpsBurst = maxRps
+		if maxRpsBurst <= 0 {
+			maxRpsBurst = 1
+		}
+	}
+
+	srv := grpc.NewServer(
+		grpc.UnaryInterceptor(unaryLimiterInterceptor(maxInflight, maxRps, maxRpsBurst)),
+	)
 	balancev1.RegisterBalanceServiceServer(srv, &balanceServer{})
 
 	log.Printf("balance-service gRPC listening on %s", addr)
