@@ -1,3 +1,17 @@
+// balance-service (dummy)
+//
+// NOTE: This implementation fans out to multiple bank/PSP "providers" using a worker pool.
+// In production, each provider call should be wrapped in a per-provider circuit breaker.
+//
+// Why Redis/distributed:
+//   - The service will run with multiple replicas; breaker state must be shared across instances.
+//   - A Redis-backed breaker enables fast-fail for a provider that is currently unhealthy
+//     (timeouts/5xx), protecting overall latency and preventing a thundering herd.
+//
+// Expected behavior (high level):
+// - Maintain breaker state per provider_id (not global).
+// - Open on repeated failures/timeouts; half-open after a cooldown; close on success.
+// - When open, skip the provider call quickly and return partial results for the request.
 package main
 
 import (
