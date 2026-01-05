@@ -3,6 +3,7 @@ module github.com/christk1/fintech-platform/services/balance-service
 go 1.25
 
 require (
+	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 )

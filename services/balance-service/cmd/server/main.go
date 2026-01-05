@@ -10,10 +10,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	balancev1 "github.com/christk1/fintech-platform/services/balance-service/proto"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -73,30 +73,36 @@ func (s *balanceServer) GetMetrics(
 
 	jobs := make(chan string)
 	results := make(chan *balancev1.ProviderMetric)
-	workerErrors := make(chan error, 1)
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	providerTimeoutMs := getenvInt("PROVIDER_TIMEOUT_MS", 400)
+	if providerTimeoutMs <= 0 {
+		providerTimeoutMs = 400
+	}
+	providerTimeout := time.Duration(providerTimeoutMs) * time.Millisecond
 
-	var wg sync.WaitGroup
+	wg, wgctx := errgroup.WithContext(ctx)
 	for range workers {
-		wg.Go(func() {
+		wg.Go(func() error {
 			for providerID := range jobs {
-				metric, err := fetchDummyMetric(ctx, providerID)
+				pctx, cancel := context.WithTimeout(wgctx, providerTimeout)
+				metric, err := fetchDummyMetric(pctx, providerID)
+				cancel()
+
 				if err != nil {
-					select {
-					case workerErrors <- err:
-					default:
+					// A single provider timing out shouldn't fail the whole aggregation.
+					if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+						continue
 					}
-					cancel()
-					return
+					return err
 				}
+
 				select {
 				case results <- metric:
-				case <-ctx.Done():
-					return
+				case <-wgctx.Done():
+					return wgctx.Err()
 				}
 			}
+			return nil
 		})
 	}
 
@@ -106,23 +112,27 @@ func (s *balanceServer) GetMetrics(
 		for _, providerID := range providerIDs {
 			select {
 			case jobs <- providerID:
-			case <-ctx.Done():
+			case <-wgctx.Done():
 				return
 			}
 		}
 	}()
 
 	// Close results when all workers exit.
+	errCh := make(chan error, 1)
 	go func() {
-		wg.Wait()
+		errCh <- wg.Wait()
 		close(results)
 	}()
 
 	var metrics []*balancev1.ProviderMetric
 	for {
 		select {
-		case err := <-workerErrors:
+		case err := <-errCh:
 			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					return nil, status.Error(codes.DeadlineExceeded, "request deadline exceeded")
+				}
 				return nil, status.Error(codes.Unavailable, "provider fanout failed")
 			}
 		case metric, ok := <-results:
@@ -130,17 +140,8 @@ func (s *balanceServer) GetMetrics(
 				return &balancev1.MetricsResponse{Metrics: metrics}, nil
 			}
 			metrics = append(metrics, metric)
-		case <-ctx.Done():
-			// Prefer surfacing any worker error if one occurred.
-			select {
-			case err := <-workerErrors:
-				if err != nil {
-					return nil, status.Error(codes.Unavailable, "provider fanout failed")
-				}
-			default:
-			}
-
-			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		case <-wgctx.Done():
+			if errors.Is(wgctx.Err(), context.DeadlineExceeded) {
 				return nil, status.Error(codes.DeadlineExceeded, "request deadline exceeded")
 			}
 			return nil, status.Error(codes.Canceled, "request canceled")
