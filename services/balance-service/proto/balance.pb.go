@@ -101,6 +101,197 @@ func (x *PingResponse) GetStatus() string {
 	return ""
 }
 
+type MetricsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// If empty, the server will return a default set of providers.
+	ProviderIds []string `protobuf:"bytes,1,rep,name=provider_ids,json=providerIds,proto3" json:"provider_ids,omitempty"`
+	// Optional: a logical client identifier (not used by the dummy implementation).
+	ClientId      string `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MetricsRequest) Reset() {
+	*x = MetricsRequest{}
+	mi := &file_proto_balance_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MetricsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetricsRequest) ProtoMessage() {}
+
+func (x *MetricsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_balance_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetricsRequest.ProtoReflect.Descriptor instead.
+func (*MetricsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_balance_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *MetricsRequest) GetProviderIds() []string {
+	if x != nil {
+		return x.ProviderIds
+	}
+	return nil
+}
+
+func (x *MetricsRequest) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
+}
+
+type MetricsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Metrics       []*ProviderMetric      `protobuf:"bytes,1,rep,name=metrics,proto3" json:"metrics,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MetricsResponse) Reset() {
+	*x = MetricsResponse{}
+	mi := &file_proto_balance_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MetricsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetricsResponse) ProtoMessage() {}
+
+func (x *MetricsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_balance_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetricsResponse.ProtoReflect.Descriptor instead.
+func (*MetricsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_balance_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *MetricsResponse) GetMetrics() []*ProviderMetric {
+	if x != nil {
+		return x.Metrics
+	}
+	return nil
+}
+
+type ProviderMetric struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ProviderId   string                 `protobuf:"bytes,1,opt,name=provider_id,json=providerId,proto3" json:"provider_id,omitempty"`
+	ProviderName string                 `protobuf:"bytes,2,opt,name=provider_name,json=providerName,proto3" json:"provider_name,omitempty"`
+	// e.g. "bank" or "psp".
+	ProviderType   string `protobuf:"bytes,3,opt,name=provider_type,json=providerType,proto3" json:"provider_type,omitempty"`
+	Currency       string `protobuf:"bytes,4,opt,name=currency,proto3" json:"currency,omitempty"`
+	AvailableCents int64  `protobuf:"varint,5,opt,name=available_cents,json=availableCents,proto3" json:"available_cents,omitempty"`
+	LedgerCents    int64  `protobuf:"varint,6,opt,name=ledger_cents,json=ledgerCents,proto3" json:"ledger_cents,omitempty"`
+	AsOfUnixMs     int64  `protobuf:"varint,7,opt,name=as_of_unix_ms,json=asOfUnixMs,proto3" json:"as_of_unix_ms,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ProviderMetric) Reset() {
+	*x = ProviderMetric{}
+	mi := &file_proto_balance_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProviderMetric) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProviderMetric) ProtoMessage() {}
+
+func (x *ProviderMetric) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_balance_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProviderMetric.ProtoReflect.Descriptor instead.
+func (*ProviderMetric) Descriptor() ([]byte, []int) {
+	return file_proto_balance_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ProviderMetric) GetProviderId() string {
+	if x != nil {
+		return x.ProviderId
+	}
+	return ""
+}
+
+func (x *ProviderMetric) GetProviderName() string {
+	if x != nil {
+		return x.ProviderName
+	}
+	return ""
+}
+
+func (x *ProviderMetric) GetProviderType() string {
+	if x != nil {
+		return x.ProviderType
+	}
+	return ""
+}
+
+func (x *ProviderMetric) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *ProviderMetric) GetAvailableCents() int64 {
+	if x != nil {
+		return x.AvailableCents
+	}
+	return 0
+}
+
+func (x *ProviderMetric) GetLedgerCents() int64 {
+	if x != nil {
+		return x.LedgerCents
+	}
+	return 0
+}
+
+func (x *ProviderMetric) GetAsOfUnixMs() int64 {
+	if x != nil {
+		return x.AsOfUnixMs
+	}
+	return 0
+}
+
 var File_proto_balance_proto protoreflect.FileDescriptor
 
 const file_proto_balance_proto_rawDesc = "" +
@@ -109,9 +300,26 @@ const file_proto_balance_proto_rawDesc = "" +
 	"balance.v1\"\r\n" +
 	"\vPingRequest\"&\n" +
 	"\fPingResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status2K\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"P\n" +
+	"\x0eMetricsRequest\x12!\n" +
+	"\fprovider_ids\x18\x01 \x03(\tR\vproviderIds\x12\x1b\n" +
+	"\tclient_id\x18\x02 \x01(\tR\bclientId\"G\n" +
+	"\x0fMetricsResponse\x124\n" +
+	"\ametrics\x18\x01 \x03(\v2\x1a.balance.v1.ProviderMetricR\ametrics\"\x86\x02\n" +
+	"\x0eProviderMetric\x12\x1f\n" +
+	"\vprovider_id\x18\x01 \x01(\tR\n" +
+	"providerId\x12#\n" +
+	"\rprovider_name\x18\x02 \x01(\tR\fproviderName\x12#\n" +
+	"\rprovider_type\x18\x03 \x01(\tR\fproviderType\x12\x1a\n" +
+	"\bcurrency\x18\x04 \x01(\tR\bcurrency\x12'\n" +
+	"\x0favailable_cents\x18\x05 \x01(\x03R\x0eavailableCents\x12!\n" +
+	"\fledger_cents\x18\x06 \x01(\x03R\vledgerCents\x12!\n" +
+	"\ras_of_unix_ms\x18\a \x01(\x03R\n" +
+	"asOfUnixMs2\x92\x01\n" +
 	"\x0eBalanceService\x129\n" +
-	"\x04Ping\x12\x17.balance.v1.PingRequest\x1a\x18.balance.v1.PingResponseBOZMgithub.com/christk1/fintech-platform/services/balance-service/proto;balancev1b\x06proto3"
+	"\x04Ping\x12\x17.balance.v1.PingRequest\x1a\x18.balance.v1.PingResponse\x12E\n" +
+	"\n" +
+	"GetMetrics\x12\x1a.balance.v1.MetricsRequest\x1a\x1b.balance.v1.MetricsResponseBOZMgithub.com/christk1/fintech-platform/services/balance-service/proto;balancev1b\x06proto3"
 
 var (
 	file_proto_balance_proto_rawDescOnce sync.Once
@@ -125,19 +333,25 @@ func file_proto_balance_proto_rawDescGZIP() []byte {
 	return file_proto_balance_proto_rawDescData
 }
 
-var file_proto_balance_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_balance_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_balance_proto_goTypes = []any{
-	(*PingRequest)(nil),  // 0: balance.v1.PingRequest
-	(*PingResponse)(nil), // 1: balance.v1.PingResponse
+	(*PingRequest)(nil),     // 0: balance.v1.PingRequest
+	(*PingResponse)(nil),    // 1: balance.v1.PingResponse
+	(*MetricsRequest)(nil),  // 2: balance.v1.MetricsRequest
+	(*MetricsResponse)(nil), // 3: balance.v1.MetricsResponse
+	(*ProviderMetric)(nil),  // 4: balance.v1.ProviderMetric
 }
 var file_proto_balance_proto_depIdxs = []int32{
-	0, // 0: balance.v1.BalanceService.Ping:input_type -> balance.v1.PingRequest
-	1, // 1: balance.v1.BalanceService.Ping:output_type -> balance.v1.PingResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: balance.v1.MetricsResponse.metrics:type_name -> balance.v1.ProviderMetric
+	0, // 1: balance.v1.BalanceService.Ping:input_type -> balance.v1.PingRequest
+	2, // 2: balance.v1.BalanceService.GetMetrics:input_type -> balance.v1.MetricsRequest
+	1, // 3: balance.v1.BalanceService.Ping:output_type -> balance.v1.PingResponse
+	3, // 4: balance.v1.BalanceService.GetMetrics:output_type -> balance.v1.MetricsResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_proto_balance_proto_init() }
@@ -151,7 +365,7 @@ func file_proto_balance_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_balance_proto_rawDesc), len(file_proto_balance_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

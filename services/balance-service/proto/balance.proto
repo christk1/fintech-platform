@@ -6,10 +6,34 @@ option go_package = "github.com/christk1/fintech-platform/services/balance-servi
 
 service BalanceService {
   rpc Ping(PingRequest) returns (PingResponse);
+  rpc GetMetrics(MetricsRequest) returns (MetricsResponse);
 }
 
 message PingRequest {}
 
 message PingResponse {
   string status = 1;
+}
+
+message MetricsRequest {
+  // If empty, the server will return a default set of providers.
+  repeated string provider_ids = 1;
+  // Optional: a logical client identifier (not used by the dummy implementation).
+  string client_id = 2;
+}
+
+message MetricsResponse {
+  repeated ProviderMetric metrics = 1;
+}
+
+message ProviderMetric {
+  string provider_id = 1;
+  string provider_name = 2;
+  // e.g. "bank" or "psp".
+  string provider_type = 3;
+
+  string currency = 4;
+  int64 available_cents = 5;
+  int64 ledger_cents = 6;
+  int64 as_of_unix_ms = 7;
 }

@@ -39,12 +39,23 @@ class BalanceServiceStub(object):
                 request_serializer=balance__pb2.PingRequest.SerializeToString,
                 response_deserializer=balance__pb2.PingResponse.FromString,
                 _registered_method=True)
+        self.GetMetrics = channel.unary_unary(
+                '/balance.v1.BalanceService/GetMetrics',
+                request_serializer=balance__pb2.MetricsRequest.SerializeToString,
+                response_deserializer=balance__pb2.MetricsResponse.FromString,
+                _registered_method=True)
 
 
 class BalanceServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetMetrics(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +68,11 @@ def add_BalanceServiceServicer_to_server(servicer, server):
                     servicer.Ping,
                     request_deserializer=balance__pb2.PingRequest.FromString,
                     response_serializer=balance__pb2.PingResponse.SerializeToString,
+            ),
+            'GetMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetMetrics,
+                    request_deserializer=balance__pb2.MetricsRequest.FromString,
+                    response_serializer=balance__pb2.MetricsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +102,33 @@ class BalanceService(object):
             '/balance.v1.BalanceService/Ping',
             balance__pb2.PingRequest.SerializeToString,
             balance__pb2.PingResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/balance.v1.BalanceService/GetMetrics',
+            balance__pb2.MetricsRequest.SerializeToString,
+            balance__pb2.MetricsResponse.FromString,
             options,
             channel_credentials,
             insecure,

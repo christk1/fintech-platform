@@ -16,3 +16,17 @@ class PublishResponse(BaseModel):
 
 class BalancePingResponse(BaseModel):
     status: str
+
+
+class ProviderMetric(BaseModel):
+    provider_id: str
+    provider_name: str
+    provider_type: str
+    currency: str
+    available_cents: int
+    ledger_cents: int
+    as_of_unix_ms: int
+
+
+class BalanceMetricsResponse(BaseModel):
+    metrics: list[ProviderMetric]

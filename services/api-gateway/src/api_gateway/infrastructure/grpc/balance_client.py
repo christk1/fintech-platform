@@ -33,3 +33,17 @@ class BalanceGrpcClient:
 
         response = await self._stub.Ping(balance_pb2.PingRequest())
         return response.status
+
+    async def get_metrics(
+        self, *, client_id: str, provider_ids: list[str] | None = None
+    ) -> list[balance_pb2.ProviderMetric]:
+        if self._stub is None:
+            raise RuntimeError("BalanceGrpcClient not started")
+
+        request = balance_pb2.MetricsRequest(
+            provider_ids=provider_ids or [],
+            client_id=client_id,
+        )
+        response = await self._stub.GetMetrics(request)
+
+        return list(response.metrics)
