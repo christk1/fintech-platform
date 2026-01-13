@@ -3,10 +3,12 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from api_gateway.application.use_cases.publish_message import PublishMessage
 from api_gateway.infrastructure.aws.sqs_message_publisher import SqsMessagePublisher
 from api_gateway.infrastructure.cache.redis_client import build_redis_client
+from api_gateway.infrastructure.observability.otel import init_otel
 from api_gateway.infrastructure.persistence.db import get_engine
 from api_gateway.interfaces.http.routers import v1, v2
 
@@ -25,7 +27,10 @@ def create_app() -> FastAPI:
             except Exception:  # noqa: BLE001
                 pass
 
+    init_otel(service_name="api-gateway")
+
     app = FastAPI(title="api-gateway", lifespan=lifespan)
+    FastAPIInstrumentor().instrument_app(app)
 
     # Dependency wiring (outer layers depend inward).
     app.state.publish_message_use_case = PublishMessage(publisher=SqsMessagePublisher())

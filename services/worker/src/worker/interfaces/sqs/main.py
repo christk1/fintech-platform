@@ -13,6 +13,7 @@ from worker.infrastructure.idempotency.postgres import (
     PostgresIdempotencyStore,
     idempotency_table_name_from_env,
 )
+from worker.infrastructure.observability.otel import init_otel
 
 
 def _required_env(name: str) -> str:
@@ -33,9 +34,11 @@ def _build_idempotency_store() -> PostgresIdempotencyStore:
 
 
 def run_forever() -> None:
+    init_otel(service_name=os.getenv("OTEL_SERVICE_NAME", "worker"))
+
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", "INFO").upper(),
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        format="%(asctime)s %(levelname)s %(name)s trace_id=%(otelTraceID)s span_id=%(otelSpanID)s %(message)s",
     )
 
     region = os.getenv("AWS_REGION", "us-east-1")

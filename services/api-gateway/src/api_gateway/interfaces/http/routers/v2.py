@@ -7,6 +7,8 @@ import time
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import text
 
+from opentelemetry.propagate import inject
+
 from api_gateway.interfaces.http.schemas import (
     BalanceMetricsResponse,
     BalancePingResponse,
@@ -128,12 +130,16 @@ async def balance_metrics(request: Request, client_id: str) -> BalanceMetricsRes
         if publish_message is not None:
             try:
                 logger.info("enqueue balance.reconcile client_id=%s reason=stale_or_missing", client_id)
+
+                carrier: dict[str, str] = {}
+                inject(carrier)
                 await publish_message.execute(
                     message_type="balance.reconcile",
                     payload={
                         "client_id": client_id,
                         "trigger": "api_read",
                         "reason": "stale_or_missing",
+                        **carrier,
                     },
                 )
             except Exception:
