@@ -16,6 +16,7 @@ provider "aws" {
     ecs = var.localstack_endpoint
     elbv2 = var.localstack_endpoint
     elasticache = var.localstack_endpoint
+    events = var.localstack_endpoint
     rds = var.localstack_endpoint
     sqs = var.localstack_endpoint
     sts = var.localstack_endpoint

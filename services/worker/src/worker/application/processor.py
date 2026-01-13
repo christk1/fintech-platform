@@ -15,6 +15,11 @@ class MessageProcessor:
     def __init__(self, idempotency: IdempotencyStore) -> None:
         self._idempotency = idempotency
 
+    def _handle_balance_reconcile(self, payload: object) -> None:
+        # Placeholder for the real reconciliation workflow.
+        # For now we accept the scheduled trigger and keep the worker healthy.
+        return
+
     def process(self, *, message_id: str, body: str) -> ProcessResult:
         # This is intentionally skeletal: boundary + idempotency pattern only.
         # Webhook handling / background jobs should be orchestrated from here.
@@ -24,7 +29,14 @@ class MessageProcessor:
             return ProcessResult(should_delete=True)
 
         try:
-            _ = json.loads(body)  # validate/route by message type in real implementation
+            decoded = json.loads(body)
+            if isinstance(decoded, dict):
+                message_type = decoded.get("message_type")
+                payload = decoded.get("payload")
+
+                if message_type == "balance.reconcile":
+                    self._handle_balance_reconcile(payload)
+
             self._idempotency.complete(message_id, ttl_seconds=ttl_seconds)
             return ProcessResult(should_delete=True)
         except Exception:

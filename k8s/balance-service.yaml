@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: balance-service
+  namespace: fintech
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: balance-service
+  template:
+    metadata:
+      labels:
+        app: balance-service
+    spec:
+      containers:
+        - name: balance-service
+          image: fintech/balance-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 50051
+          envFrom:
+            - secretRef:
+                name: fintech-env
+          env:
+            - name: HOST
+              value: 0.0.0.0
+            - name: PORT
+              value: "50051"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: balance-service
+  namespace: fintech
+spec:
+  selector:
+    app: balance-service
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+  type: ClusterIP
