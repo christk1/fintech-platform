@@ -12,6 +12,7 @@ resource "aws_cloudwatch_event_target" "balance_reconcile_to_sqs" {
   input = jsonencode({
     message_type = "balance.reconcile"
     payload = {
+      client_id = "local-test-client"
       trigger = "eventbridge"
       reason  = "scheduled"
     }

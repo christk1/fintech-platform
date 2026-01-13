@@ -1,4 +1,4 @@
-.PHONY: infra-local infra-local-clean sync-env up down reset migrate
+.PHONY: infra-local infra-local-clean sync-env up down reset migrate gen-grpc
 
 infra-local:
 	cd infra/envs/local && terraform init && terraform apply -auto-approve
@@ -30,3 +30,6 @@ migrate:
 	@set -a; [ -f .env ] && . ./.env; set +a; \
 	DATABASE_URL="$$(printf '%s' "$$DATABASE_URL" | sed 's/host.docker.internal/localhost/g')"; \
 	cd services/api-gateway && DATABASE_URL="$$DATABASE_URL" ../../.venv/bin/python -m alembic -c alembic.ini upgrade head
+
+gen-grpc:
+	./.venv/bin/python scripts/gen_balance_grpc_py.py

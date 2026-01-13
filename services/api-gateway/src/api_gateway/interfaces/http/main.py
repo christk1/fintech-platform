@@ -1,26 +1,29 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from api_gateway.application.use_cases.publish_message import PublishMessage
 from api_gateway.infrastructure.aws.sqs_message_publisher import SqsMessagePublisher
-from api_gateway.infrastructure.grpc.balance_client import BalanceGrpcClient
+from api_gateway.infrastructure.cache.redis_client import build_redis_client
+from api_gateway.infrastructure.persistence.db import get_engine
 from api_gateway.interfaces.http.routers import v1, v2
 
 
 def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):  # type: ignore[no-redef]
-        client = BalanceGrpcClient.from_env()
-        await client.start()
-        app.state.balance_grpc_client = client
+        # Public API is snapshot-only: no direct balance aggregation calls.
+        app.state.redis = build_redis_client()
+        app.state.db_engine = get_engine()
         try:
             yield
         finally:
-            with suppress(Exception):  # noqa: BLE001
-                await client.stop()
+            try:
+                await app.state.redis.aclose()
+            except Exception:  # noqa: BLE001
+                pass
 
     app = FastAPI(title="api-gateway", lifespan=lifespan)
 

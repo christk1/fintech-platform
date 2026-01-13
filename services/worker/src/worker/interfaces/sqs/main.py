@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+import logging
 
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -32,6 +33,11 @@ def _build_idempotency_store() -> PostgresIdempotencyStore:
 
 
 def run_forever() -> None:
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO").upper(),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+
     region = os.getenv("AWS_REGION", "us-east-1")
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")  # LocalStack: http://localstack:4566
     queue_url = _required_env("SQS_PAYMENTS_QUEUE_URL")
